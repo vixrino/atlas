@@ -1,0 +1,276 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownsAlbum() {
+      return signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Albums created before sharing carry no memberIds, so the owner has to be
+    // treated as a member on their own album rather than read out of the list.
+    function editsAlbum() {
+      return ownsAlbum()
+             || (signedIn()
+                 && request.auth.uid in resource.data.get('memberIds', []));
+    }
+
+    function albumMemberIds() {
+      return resource.data.get('memberIds', []);
+    }
+
+    function albumPendingIds() {
+      return resource.data.get('pendingMemberIds', []);
+    }
+
+    function nextMemberIds() {
+      return request.resource.data.get('memberIds', []);
+    }
+
+    function nextPendingIds() {
+      return request.resource.data.get('pendingMemberIds', []);
+    }
+
+    // An invitee may only move themselves out of pending — either into
+    // members (accept) or off the list (decline). Everything else on the
+    // album has to stay put so accepting cannot rewrite the collection.
+    function albumContentUnchanged() {
+      return request.resource.data.name == resource.data.name
+             && request.resource.data.placeIds == resource.data.placeIds
+             && request.resource.data.get('coverUrl', null)
+                == resource.data.get('coverUrl', null)
+             && request.resource.data.get('visibility', 'private')
+                == resource.data.get('visibility', 'private');
+    }
+
+    // A public journey is public to everyone, signed in or not — that is what
+    // makes the deployment something a visitor can try before deciding to make
+    // an account. Everything private still needs a name on the album.
+    function canReadAlbum() {
+      return resource.data.get('visibility', 'private') == 'public'
+             || (signedIn()
+                 && (resource.data.ownerId == request.auth.uid
+                     || request.auth.uid in resource.data.get('memberIds', [])
+                     || request.auth.uid
+                        in resource.data.get('pendingMemberIds', [])));
+    }
+
+    function acceptingOwnInvite() {
+      return signedIn()
+             && request.auth.uid in albumPendingIds()
+             && !(request.auth.uid in nextPendingIds())
+             && request.auth.uid in nextMemberIds()
+             && !(request.auth.uid in albumMemberIds())
+             && albumContentUnchanged()
+             && nextMemberIds().hasAll(albumMemberIds())
+             && nextMemberIds().size() == albumMemberIds().size() + 1
+             && albumPendingIds().hasAll(nextPendingIds())
+             && albumPendingIds().size() == nextPendingIds().size() + 1;
+    }
+
+    function decliningOwnInvite() {
+      return signedIn()
+             && request.auth.uid in albumPendingIds()
+             && !(request.auth.uid in nextPendingIds())
+             && nextMemberIds() == albumMemberIds()
+             && albumContentUnchanged()
+             && albumPendingIds().hasAll(nextPendingIds())
+             && albumPendingIds().size() == nextPendingIds().size() + 1;
+    }
+
+    // A non-owner member may drop only themselves. The owner stays on the
+    // list, nobody else can be removed or added, and album content is frozen.
+    function leavingOwnMembership() {
+      return signedIn()
+             && request.auth.uid != resource.data.ownerId
+             && request.auth.uid in albumMemberIds()
+             && !(request.auth.uid in nextMemberIds())
+             && resource.data.ownerId in nextMemberIds()
+             && albumMemberIds().hasAll(nextMemberIds())
+             && albumMemberIds().size() == nextMemberIds().size() + 1
+             && nextPendingIds() == albumPendingIds()
+             && albumContentUnchanged();
+    }
+
+    // Anyone signed in may add places to a public journey — contribution is
+    // the point of making one public. Only placeIds may change, and only by
+    // growing: nothing gets renamed, removed, re-covered, or made private on
+    // this path, and membership stays exactly as it was.
+    function contributingToPublicAlbum() {
+      return signedIn()
+             && resource.data.get('visibility', 'private') == 'public'
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['placeIds'])
+             && request.resource.data.placeIds.hasAll(resource.data.placeIds);
+    }
+
+    function ownsPlace() {
+      return signedIn() && resource.data.uploaderId == request.auth.uid;
+    }
+
+    // A journey member may edit location on a place that journey still holds.
+    // albumIds on the place is the index; membership is read off each album.
+    function memberOfAlbumWithPlace(albumId, id) {
+      let album = get(/databases/$(database)/documents/albums/$(albumId)).data;
+      return id in album.get('placeIds', [])
+             && (request.auth.uid == album.ownerId
+                 || request.auth.uid in album.get('memberIds', []));
+    }
+
+    function memberOfListedAlbumContainingPlace(id) {
+      let ids = resource.data.get('albumIds', []);
+      return (ids.size() > 0 && memberOfAlbumWithPlace(ids[0], id))
+             || (ids.size() > 1 && memberOfAlbumWithPlace(ids[1], id))
+             || (ids.size() > 2 && memberOfAlbumWithPlace(ids[2], id))
+             || (ids.size() > 3 && memberOfAlbumWithPlace(ids[3], id))
+             || (ids.size() > 4 && memberOfAlbumWithPlace(ids[4], id));
+    }
+
+    // Collaborators may correct what a capture is called and where it sits —
+    // not replace its splat, trash it, or rewrite which journeys it belongs to.
+    // A shared journey is a thing several people are writing together, and a
+    // name someone else typed in a hurry is the most common thing to be wrong.
+    function collaboratorDetailEdit(id) {
+      return signedIn()
+             && !ownsPlace()
+             && memberOfListedAlbumContainingPlace(id)
+             && request.resource.data.uploaderId == resource.data.uploaderId
+             && request.resource.data.splatUrl == resource.data.splatUrl
+             && request.resource.data.createdAt == resource.data.createdAt
+             && request.resource.data.get('thumbnailUrl', '')
+                == resource.data.get('thumbnailUrl', '')
+             && request.resource.data.get('audioUrl', null)
+                == resource.data.get('audioUrl', null)
+             && request.resource.data.get('audioSeconds', null)
+                == resource.data.get('audioSeconds', null)
+             && request.resource.data.get('deletedAt', null)
+                == resource.data.get('deletedAt', null)
+             && request.resource.data.get('entryPoint', null)
+                == resource.data.get('entryPoint', null)
+             && request.resource.data.get('capturedAt', null)
+                == resource.data.get('capturedAt', null)
+             && request.resource.data.get('albumIds', [])
+                == resource.data.get('albumIds', []);
+    }
+
+    // Members (and owners) may stamp albumIds onto places the journey holds,
+    // so older captures pick up the link collaborators need for location edits.
+    function linkingAlbumIds(id) {
+      let next = request.resource.data.get('albumIds', []);
+      let prev = resource.data.get('albumIds', []);
+      return signedIn()
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['albumIds'])
+             && request.resource.data.uploaderId == resource.data.uploaderId
+             && next.hasAll(prev)
+             && (next.size() == 0 || memberOfAlbumWithPlace(next[0], id))
+             && (next.size() <= 1 || memberOfAlbumWithPlace(next[1], id))
+             && (next.size() <= 2 || memberOfAlbumWithPlace(next[2], id))
+             && (next.size() <= 3 || memberOfAlbumWithPlace(next[3], id))
+             && (next.size() <= 4 || memberOfAlbumWithPlace(next[4], id));
+    }
+
+    // Profiles are the public face of an account — Discover, a profile page,
+    // and the name under a capture all read them without asking who is
+    // looking. Only the account owner can create or edit their own.
+    match /profiles/{userId} {
+      allow read: if true;
+      allow create: if signedIn() && userId == request.auth.uid;
+      allow update: if signedIn()
+                    && userId == request.auth.uid
+                    && request.resource.data.username == resource.data.username;
+      allow delete: if signedIn() && userId == request.auth.uid;
+    }
+
+    // Username claim documents are immutable locks created by their owner.
+    match /usernames/{username} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+                    && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Private journeys stay with the owner, members, and pending invitees.
+    // Public ones are readable by anyone signed in (e.g. from a profile or
+    // the Feed), and anyone signed in may add places to them — everything
+    // else still requires membership, and only the owner flips visibility.
+    match /albums/{albumId} {
+      allow create: if signedIn()
+                    && request.resource.data.ownerId == request.auth.uid
+                    && request.resource.data.visibility in ['private', 'public'];
+      allow read: if canReadAlbum();
+      allow delete: if ownsAlbum();
+      // Owner manages membership, invites, and visibility. Members may edit
+      // content but not who else is on the album — except leaving themselves —
+      // and may not change visibility. A pending invitee may only accept or
+      // decline for themselves — they are not in memberIds yet, so editsAlbum
+      // is false.
+      allow update: if request.resource.data.ownerId == resource.data.ownerId
+                    && (ownsAlbum()
+                        || acceptingOwnInvite()
+                        || decliningOwnInvite()
+                        || leavingOwnMembership()
+                        || contributingToPublicAlbum()
+                        || (editsAlbum()
+                            && nextMemberIds() == albumMemberIds()
+                            && nextPendingIds() == albumPendingIds()
+                            && request.resource.data.get('visibility', 'private')
+                               == resource.data.get('visibility', 'private')
+                            && request.resource.data.get('memberAddedAt', {})
+                               == resource.data.get('memberAddedAt', {})
+                            && request.resource.data.get('invitePendingAt', {})
+                               == resource.data.get('invitePendingAt', {})));
+    }
+
+    match /places/{placeId} {
+      allow create: if signedIn()
+                    && request.resource.data.uploaderId == request.auth.uid;
+      // Open, like the splat bytes in Storage already are. A capture is only
+      // ever surfaced through something that decides its own visibility — a
+      // public journey, a profile, the feed — and scoping the read to "sits in
+      // a public album" is not expressible without a get() per document, which
+      // would price every grid in the app by the tile. Writing is still the
+      // uploader's, and everything below is unchanged.
+      allow read: if true;
+      allow delete: if ownsPlace();
+      allow update: if (ownsPlace()
+                        && request.resource.data.uploaderId
+                           == resource.data.uploaderId)
+                    || collaboratorDetailEdit(placeId)
+                    || linkingAlbumIds(placeId);
+
+      match /audioPins/{pinId} {
+        allow read, create, update, delete: if signedIn()
+          && get(/databases/$(database)/documents/places/$(placeId)).data.uploaderId
+             == request.auth.uid;
+      }
+    }
+
+    // One doc per follow edge, id "{followerId}_{followingId}". Pinning the id
+    // to request.auth.uid is what stops forgery: without it any signed-in
+    // client could write edges on other people's behalf and inflate their
+    // counts. Self-follows are rejected so a profile cannot pad its own.
+    match /follows/{followId} {
+      // Counts sit on a public profile, so they are readable by a visitor who
+      // has not signed in. Creating an edge still needs an account.
+      allow read: if true;
+      allow create: if signedIn()
+                    && followId == request.auth.uid + '_'
+                       + request.resource.data.followingId
+                    && request.resource.data.followerId == request.auth.uid
+                    && request.resource.data.followerId
+                       != request.resource.data.followingId;
+      allow delete: if signedIn()
+                    && resource.data.followerId == request.auth.uid;
+      allow update: if false;
+    }
+
+    // Deny every collection that has not been explicitly allowed above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
