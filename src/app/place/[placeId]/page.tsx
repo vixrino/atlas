@@ -48,7 +48,8 @@ function PlaceView({ params }: { params: Promise<{ placeId: string }> }) {
   const { user } = useAuth();
   // undefined while loading, null once we know it isn't there.
   const [place, setPlace] = useState<Place | null | undefined>();
-  const [album, setAlbum] = useState<Album | null>(null);
+  const [albumState, setAlbum] = useState<Album | null>(null);
+  const album = albumId ? albumState : null;
   const [fetchedUploader, setFetchedUploader] = useState<{
     uploaderId: string;
     profile: Profile | null;
@@ -70,10 +71,7 @@ function PlaceView({ params }: { params: Promise<{ placeId: string }> }) {
   }, [placeId]);
 
   useEffect(() => {
-    if (!albumId) {
-      setAlbum(null);
-      return;
-    }
+    if (!albumId) return;
     return subscribeToAlbum(albumId, setAlbum, () => setAlbum(null));
   }, [albumId]);
 

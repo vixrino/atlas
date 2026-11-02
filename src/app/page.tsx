@@ -43,6 +43,9 @@ function countLabel(n: number, singular: string, plural: string) {
   return `${n} ${n === 1 ? singular : plural}`;
 }
 
+const NO_PLACES: Place[] = [];
+const NO_PROFILES: Profile[] = [];
+
 export default function AlbumsPage() {
   const router = useRouter();
   const { user, profile, loading: authLoading, needsUsername } = useAuthProfile();
@@ -50,7 +53,8 @@ export default function AlbumsPage() {
   const [ownedAlbums, setOwnedAlbums] = useState<Album[] | null>(null);
   const [sharedAlbums, setSharedAlbums] = useState<Album[] | null>(null);
   const [ownPlaces, setOwnPlaces] = useState<Place[] | null>(null);
-  const [sharedPlaces, setSharedPlaces] = useState<Place[]>([]);
+  const [sharedPlaceState, setSharedPlaces] = useState<Place[]>([]);
+  const sharedPlaces = user ? sharedPlaceState : NO_PLACES;
   const [error, setError] = useState(!isFirebaseConfigured);
   const [showNewAlbum, setShowNewAlbum] = useState(false);
   const [renaming, setRenaming] = useState<Album | null>(null);
@@ -59,7 +63,9 @@ export default function AlbumsPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   // Real faces for the demo shared journey — pulled from Firestore so the
   // cover stack looks like the rest of the library.
-  const [demoFaces, setDemoFaces] = useState<Profile[]>([]);
+  const [demoFaceState, setDemoFaces] = useState<Profile[]>([]);
+  const demoFaces =
+    isFirebaseConfigured && user && showDemoJourneys ? demoFaceState : NO_PROFILES;
 
   // No redirect for a signed-out visitor: this page becomes the public gallery
   // below instead. Sending them to /signin was what made trying the deployment
@@ -91,10 +97,7 @@ export default function AlbumsPage() {
   }, [user]);
 
   useEffect(() => {
-    if (!isFirebaseConfigured || !user || !showDemoJourneys) {
-      setDemoFaces([]);
-      return;
-    }
+    if (!isFirebaseConfigured || !user || !showDemoJourneys) return;
     const want = Math.max(
       ...DEMO_SHARED_JOURNEYS.map((j) => j.shared?.faceCount ?? 0),
       3,
@@ -122,10 +125,7 @@ export default function AlbumsPage() {
   }, [sharedAlbums]);
 
   useEffect(() => {
-    if (!user) {
-      setSharedPlaces([]);
-      return;
-    }
+    if (!user) return;
     const ids = sharedPlaceIdsKey ? sharedPlaceIdsKey.split(",") : [];
     return subscribeToPlacesByIds(ids, setSharedPlaces, () =>
       setSharedPlaces([]),

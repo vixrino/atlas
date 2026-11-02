@@ -99,15 +99,22 @@ bucket without one refuses the read, and a capture that saved perfectly renders
 as a black screen — `/api/places/asset` exists as the fallback for exactly that
 (see below), but setting the rule is the fix.
 
-### Tests
+### Checks
 
 ```bash
-node --experimental-strip-types scripts/captureTimeline.test.mts
+npm run lint        # ESLint (React Compiler rules included)
+npm run typecheck   # next typegen + tsc --noEmit
+npm test            # node:test over scripts/*.test.mts (Node >= 22.6)
+npm run check       # all three
 ```
 
 The timeline clustering and pacing — how a night of captures is spaced out when
-a tour plays itself — is the one piece with real fixtures behind it. There is no
-`npm test`; the file runs directly under `node:test`.
+a tour plays itself — is the one piece with real fixtures behind it.
+
+`npm run build` succeeds without any `.env.local`, so CI
+(`.github/workflows/ci.yml`) runs lint, typecheck, tests and a production build
+on every push and pull request. The `/api/dev/*` routes read the local disk and
+answer 404 in production.
 
 ## Routes
 

@@ -64,7 +64,8 @@ export default function PlacesMap({
   const placesRef = useRef(places);
   const liveRef = useRef(liveLocation);
   const didCenterRef = useRef(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setError] = useState<string | null>(null);
+  const error = isGoogleMapsConfigured() ? loadError : "missing-key";
   const [ready, setReady] = useState(false);
   // Latest props for the effects that need them without wanting to re-run on
   // every change. Declared first so it commits ahead of the effects below.
@@ -75,10 +76,7 @@ export default function PlacesMap({
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    if (!isGoogleMapsConfigured()) {
-      setError("missing-key");
-      return;
-    }
+    if (!isGoogleMapsConfigured()) return;
 
     let cancelled = false;
 

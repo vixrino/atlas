@@ -52,6 +52,8 @@ const TABS: { key: ProfileTab; label: string }[] = [
   { key: "places", label: "Places" },
 ];
 
+type Failure = { id: string; message: string };
+
 export default function ProfilePage({
   params,
 }: {
@@ -60,12 +62,12 @@ export default function ProfilePage({
   const { username } = use(params);
   const { user, profile: myProfile } = useAuthProfile();
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
-  const [albums, setAlbums] = useState<Album[] | null>(null);
-  const [places, setPlaces] = useState<Place[] | null>(null);
-  const [albumsError, setAlbumsError] = useState<string | null>(null);
-  const [placesError, setPlacesError] = useState<string | null>(null);
-  const [followers, setFollowers] = useState<number | null>(null);
-  const [following, setFollowing] = useState<number | null>(null);
+  const [albumState, setAlbums] = useState<Album[] | null>(null);
+  const [placeState, setPlaces] = useState<Place[] | null>(null);
+  const [albumsFailure, setAlbumsFailure] = useState<Failure | null>(null);
+  const [placesFailure, setPlacesFailure] = useState<Failure | null>(null);
+  const [followerState, setFollowers] = useState<number | null>(null);
+  const [followingState, setFollowing] = useState<number | null>(null);
   const [followList, setFollowList] = useState<FollowListKind | null>(null);
   const [tab, setTab] = useState<ProfileTab>("journeys");
 
@@ -73,31 +75,38 @@ export default function ProfilePage({
     return subscribeToProfileByUsername(username, setProfile);
   }, [username]);
 
+  // No profile, nothing to show; and a failure only belongs to the profile it
+  // happened on, so switching profiles clears it without an extra render.
+  const albums = profile ? albumState : null;
+  const places = profile ? placeState : null;
+  const followers = profile ? followerState : null;
+  const following = profile ? followingState : null;
+  const albumsError =
+    profile && albumsFailure?.id === profile.id ? albumsFailure.message : null;
+  const placesError =
+    profile && placesFailure?.id === profile.id ? placesFailure.message : null;
+
   useEffect(() => {
-    if (!profile) {
-      setAlbums(null);
-      setPlaces(null);
-      setAlbumsError(null);
-      setPlacesError(null);
-      setFollowers(null);
-      setFollowing(null);
-      return;
-    }
-    setAlbumsError(null);
-    setPlacesError(null);
+    if (!profile) return;
     const viewingOwn = Boolean(user && user.uid === profile.id);
     const unsubAlbums = (
       viewingOwn ? subscribeToAlbumsByOwner : subscribeToPublicAlbumsByOwner
     )(profile.id, setAlbums, () => {
       setAlbums([]);
-      setAlbumsError("Couldn’t load journeys (check Firestore rules).");
+      setAlbumsFailure({
+        id: profile.id,
+        message: "Couldn’t load journeys (check Firestore rules).",
+      });
     });
     const unsubPlaces = subscribeToPlacesByUploader(
       profile.id,
       setPlaces,
       () => {
         setPlaces([]);
-        setPlacesError("Couldn’t load places (check Firestore rules).");
+        setPlacesFailure({
+          id: profile.id,
+          message: "Couldn’t load places (check Firestore rules).",
+        });
       },
     );
     const unsubFollowers = subscribeToFollowerCount(profile.id, setFollowers);
@@ -536,10 +545,12 @@ function BioSection({
   const [draft, setDraft] = useState(profile.bio ?? "");
   const [saving, setSaving] = useState(false);
 
-  // A live snapshot can land while this sits open; don't clobber what's typed.
-  useEffect(() => {
-    if (!editing) setDraft(profile.bio ?? "");
-  }, [profile.bio, editing]);
+  // Seeded when editing starts, so a live snapshot landing while this sits
+  // open never clobbers what's typed.
+  function startEditing() {
+    setDraft(profile.bio ?? "");
+    setEditing(true);
+  }
 
   async function save() {
     setSaving(true);
@@ -598,7 +609,7 @@ function BioSection({
         </p>
         {editable && (
           <button
-            onClick={() => setEditing(true)}
+            onClick={startEditing}
             className="mt-2 text-[13px] font-medium text-[#4A4F57] transition-colors duration-150 hover:text-[#14161A]"
           >
             Edit bio
@@ -610,7 +621,7 @@ function BioSection({
 
   return editable ? (
     <button
-      onClick={() => setEditing(true)}
+      onClick={startEditing}
       className="mt-3.5 text-[15px] text-[#6B7178] transition-colors duration-150 hover:text-[#14161A]"
     >
       + Add a bio

@@ -15,13 +15,14 @@ import { subscribeToProfile } from "./profiles";
 import type { Profile } from "./types";
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null | undefined>(undefined);
+  // Without Firebase there is no one to wait for, so start signed out rather
+  // than loading forever.
+  const [user, setUser] = useState<User | null | undefined>(
+    isFirebaseConfigured ? undefined : null,
+  );
 
   useEffect(() => {
-    if (!isFirebaseConfigured) {
-      setUser(null);
-      return;
-    }
+    if (!isFirebaseConfigured) return;
     return onAuthStateChanged(auth, setUser);
   }, []);
 
@@ -34,17 +35,26 @@ export function useAuth() {
 /** Auth user + their profile (null if signed in but no username yet). */
 export function useAuthProfile() {
   const { user, loading: authLoading } = useAuth();
-  const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
+  // Keyed by uid so a profile from a previous account is never shown for the
+  // next one: until the new snapshot lands, the profile reads as loading.
+  const [snapshot, setSnapshot] = useState<{
+    uid: string;
+    profile: Profile | null;
+  } | null>(null);
 
+  const uid = user?.uid;
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      setProfile(null);
-      return;
-    }
-    setProfile(undefined);
-    return subscribeToProfile(user.uid, setProfile);
-  }, [user, authLoading]);
+    if (authLoading || !uid) return;
+    return subscribeToProfile(uid, (profile) => setSnapshot({ uid, profile }));
+  }, [uid, authLoading]);
+
+  const profile: Profile | null | undefined = authLoading
+    ? undefined
+    : !user
+      ? null
+      : snapshot?.uid === user.uid
+        ? snapshot.profile
+        : undefined;
 
   return {
     user,

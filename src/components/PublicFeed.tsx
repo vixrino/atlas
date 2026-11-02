@@ -187,9 +187,13 @@ function FeedCard({
   const [ready, setReady] = useState(false);
 
   // Scrolled away and back means a fresh viewer, so the poster returns first.
-  useEffect(() => {
+  // Adjusted during render rather than in an effect, so there is no frame
+  // where a stale "ready" shows over a viewer that has not loaded.
+  const [wasActive, setWasActive] = useState(active);
+  if (wasActive !== active) {
+    setWasActive(active);
     if (!active) setReady(false);
-  }, [active]);
+  }
 
   const taken = formatPlaceDate(place);
 

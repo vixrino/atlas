@@ -59,19 +59,25 @@ function millis(at: { toMillis?: () => number } | null | undefined) {
  * inbox. Actor profiles are resolved separately so a slow lookup never holds
  * the list back.
  */
+const NO_FOLLOWS: Follow[] = [];
+const NO_IDS: string[] = [];
+const NO_PLACES: Place[] = [];
+const NO_ALBUMS: Album[] = [];
+
 export function useNotifications(uid: string | undefined) {
-  const [followers, setFollowers] = useState<Follow[]>([]);
-  const [followingIds, setFollowingIds] = useState<string[]>([]);
-  const [places, setPlaces] = useState<Place[]>([]);
-  const [invites, setInvites] = useState<Album[]>([]);
+  const [followerState, setFollowers] = useState<Follow[]>([]);
+  const [followingState, setFollowingIds] = useState<string[]>([]);
+  const [placeState, setPlaces] = useState<Place[]>([]);
+  const [inviteState, setInvites] = useState<Album[]>([]);
+  // Signed out means nothing to show, whatever the last account left behind.
+  const followers = uid ? followerState : NO_FOLLOWS;
+  const followingIds = uid ? followingState : NO_IDS;
+  const places = uid ? placeState : NO_PLACES;
+  const invites = uid ? inviteState : NO_ALBUMS;
   const [seenAt, setSeenAt] = useState(0);
 
   useEffect(() => {
-    if (!uid) {
-      setFollowers([]);
-      setFollowingIds([]);
-      return;
-    }
+    if (!uid) return;
     const offFollowers = subscribeToFollowers(uid, setFollowers, () =>
       setFollowers([]),
     );
@@ -91,19 +97,13 @@ export function useNotifications(uid: string | undefined) {
     [followingIds],
   );
   useEffect(() => {
-    if (!uid) {
-      setPlaces([]);
-      return;
-    }
+    if (!uid) return;
     const ids = followingKey ? followingKey.split(",") : [];
     return subscribeToPlacesByUploaders(ids, setPlaces, () => setPlaces([]));
   }, [uid, followingKey]);
 
   useEffect(() => {
-    if (!uid) {
-      setInvites([]);
-      return;
-    }
+    if (!uid) return;
     return subscribeToAlbumInvites(uid, setInvites, () => setInvites([]));
   }, [uid]);
 

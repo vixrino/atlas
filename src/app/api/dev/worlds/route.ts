@@ -13,6 +13,10 @@ import { join } from "node:path";
  * each generation cost.
  */
 export async function GET() {
+  // A development convenience that reads off the local disk; never in production.
+  if (process.env.NODE_ENV === "production") {
+    return Response.json({ error: "Not found" }, { status: 404 });
+  }
   try {
     const path = join(process.cwd(), "scripts", "worldlabs-runs.json");
     const body = JSON.parse(await readFile(path, "utf8")) as {

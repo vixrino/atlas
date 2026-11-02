@@ -22,8 +22,15 @@ export default function DiscoverPage() {
   const { user } = useAuthProfile();
   const [term, setTerm] = useState("");
   const [recent, setRecent] = useState<Profile[] | null>(null);
-  const [results, setResults] = useState<Profile[] | null>(null);
-  const [searching, setSearching] = useState(false);
+  const [answer, setAnswer] = useState<{
+    term: string;
+    results: Profile[] | null;
+  } | null>(null);
+  const trimmedTerm = term.trim();
+  // Results only count for the term they answer; anything else is in flight.
+  const results =
+    trimmedTerm && answer?.term === trimmedTerm ? answer.results : null;
+  const searching = Boolean(trimmedTerm) && answer?.term !== trimmedTerm;
 
   useEffect(() => subscribeToRecentProfiles(setRecent), []);
 
@@ -31,27 +38,21 @@ export default function DiscoverPage() {
   // matters more than the delay: results can land out of order, and without it
   // a slow "ay" would overwrite a fast "aydan".
   useEffect(() => {
-    const trimmed = term.trim();
-    if (!trimmed) {
-      setResults(null);
-      setSearching(false);
-      return;
-    }
-    setSearching(true);
+    if (!trimmedTerm) return;
     let stale = false;
     const timer = setTimeout(async () => {
+      let found: Profile[] | null = null;
       try {
-        const found = await searchProfiles(trimmed);
-        if (!stale) setResults(found);
+        found = await searchProfiles(trimmedTerm);
       } finally {
-        if (!stale) setSearching(false);
+        if (!stale) setAnswer({ term: trimmedTerm, results: found });
       }
     }, DEBOUNCE_MS);
     return () => {
       stale = true;
       clearTimeout(timer);
     };
-  }, [term]);
+  }, [trimmedTerm]);
 
   const isSearch = Boolean(term.trim());
   const realPool = results ?? recent;

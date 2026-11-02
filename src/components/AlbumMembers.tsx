@@ -68,10 +68,8 @@ export default function AlbumMembers({
 
   const pendingKey = pendingIds.join(",");
   useEffect(() => {
-    if (!isOwner) {
-      setPending([]);
-      return;
-    }
+    // Only the owner sees pending invites; the render guards on isOwner.
+    if (!isOwner) return;
     let active = true;
     const ids = pendingKey ? pendingKey.split(",") : [];
     Promise.all(ids.map((id) => getProfile(id)))

@@ -28,20 +28,26 @@ export default function FollowListDialog({
   kind: FollowListKind;
   onClose: () => void;
 }) {
-  const [edges, setEdges] = useState<Follow[] | null>(null);
-  const [denied, setDenied] = useState(false);
+  // Keyed by what was asked for, so switching lists shows loading instead of
+  // the previous list's rows.
+  const key = `${kind}:${uid}`;
+  const [snapshot, setSnapshot] = useState<{
+    key: string;
+    edges: Follow[];
+    denied: boolean;
+  } | null>(null);
+  const current = snapshot?.key === key ? snapshot : null;
+  const edges = current ? current.edges : null;
+  const denied = current?.denied ?? false;
 
   useEffect(() => {
-    setEdges(null);
-    setDenied(false);
-    const fail = () => {
-      setEdges([]);
-      setDenied(true);
-    };
+    const ok = (next: Follow[]) =>
+      setSnapshot({ key, edges: next, denied: false });
+    const fail = () => setSnapshot({ key, edges: [], denied: true });
     return kind === "followers"
-      ? subscribeToFollowers(uid, setEdges, fail)
-      : subscribeToFollowing(uid, setEdges, fail);
-  }, [uid, kind]);
+      ? subscribeToFollowers(uid, ok, fail)
+      : subscribeToFollowing(uid, ok, fail);
+  }, [key, uid, kind]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();

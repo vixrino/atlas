@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 export type LatLng = { lat: number; lng: number };
 
@@ -29,18 +29,22 @@ export function getLiveLocation(
   });
 }
 
+const noopSubscribe = () => () => {};
+
 /** Watches the device GPS; updates as you move. */
 export function useLiveLocation() {
   const [location, setLocation] = useState<LatLng | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // Assumed supported on the server so the first client render matches it.
+  const supported = useSyncExternalStore(
+    noopSubscribe,
+    () => Boolean(navigator.geolocation),
+    () => true,
+  );
 
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setError("Location not supported");
-      setLoading(false);
-      return;
-    }
+    if (!supported) return;
 
     const id = navigator.geolocation.watchPosition(
       (pos) => {
@@ -63,7 +67,10 @@ export function useLiveLocation() {
     );
 
     return () => navigator.geolocation.clearWatch(id);
-  }, []);
+  }, [supported]);
 
+  if (!supported) {
+    return { location: null, error: "Location not supported", loading: false };
+  }
   return { location, error, loading };
 }

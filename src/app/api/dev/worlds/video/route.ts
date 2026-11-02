@@ -16,6 +16,10 @@ import { basename, extname, join } from "node:path";
  * a route that exists for a development convenience.
  */
 export async function GET(req: Request) {
+  // A development convenience that reads off the local disk; never in production.
+  if (process.env.NODE_ENV === "production") {
+    return Response.json({ error: "Not found" }, { status: 404 });
+  }
   const asked = new URL(req.url).searchParams.get("name");
   if (!asked) {
     return Response.json({ error: "name is required" }, { status: 400 });
@@ -43,7 +47,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const bytes = await readFile(join(process.cwd(), name));
+    const bytes = await readFile(join(/*turbopackIgnore: true*/ process.cwd(), name));
     return new Response(bytes as unknown as BodyInit, {
       headers: {
         "Content-Type":

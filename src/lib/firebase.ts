@@ -20,7 +20,16 @@ export const isFirebaseConfigured = Boolean(
   firebaseConfig.apiKey && firebaseConfig.projectId,
 );
 
-export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+/**
+ * getAuth throws on a missing API key, which would crash the build (and every
+ * page) on a machine without .env.local. Placeholders let the SDK construct;
+ * nothing talks to it, because every caller checks isFirebaseConfigured first.
+ */
+const effectiveConfig = isFirebaseConfigured
+  ? firebaseConfig
+  : { ...firebaseConfig, apiKey: "unconfigured", projectId: "unconfigured" };
+
+export const app = getApps().length ? getApp() : initializeApp(effectiveConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
