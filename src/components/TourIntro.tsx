@@ -19,7 +19,7 @@ const VEIL_MS = 600;
  */
 const RESOLVE_GRACE_MS = 2000;
 
-export interface TourIntro {
+interface TourIntro {
   /** True once the opening is under way, whether or not it can fly anywhere. */
   active: boolean;
   focus: MapFocus | null;

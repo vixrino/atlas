@@ -386,7 +386,7 @@ export async function repinPlace(
   return true;
 }
 
-export interface PlaceEdits {
+interface PlaceEdits {
   name: string;
   locationName: string;
   /** null clears the pin, leaving the name to place it on the map. */

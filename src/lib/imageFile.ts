@@ -32,7 +32,7 @@ export const AVATAR_EDGE = 512;
 export const THUMBNAIL_EDGE = 640;
 export const COVER_EDGE = 640;
 
-export interface PrepareImageOptions {
+interface PrepareImageOptions {
   /** Cap on the longer side, in pixels. */
   maxEdge: number;
   /** Centre-crop to a square, for the frames that are one. */

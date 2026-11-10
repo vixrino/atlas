@@ -160,7 +160,7 @@ function writeCache(storageKey: string, key: string, value: string | null) {
   }
 }
 
-export interface ResolvedPlaces {
+interface ResolvedPlaces {
   located: LocatedPlace[];
   /** Named but not yet resolved — the map is still filling in. */
   pending: number;

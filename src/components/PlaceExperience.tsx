@@ -30,7 +30,7 @@ const METER_BARS = [
   38, 64, 92, 50, 76, 34, 58, 44, 70, 52, 86, 40, 62, 30, 74, 48,
 ];
 
-export interface PlaceExperienceProps {
+interface PlaceExperienceProps {
   place: Place;
   /** Who captured this, when their profile could be resolved. */
   uploader?: { username: string; displayName: string } | null;

@@ -155,7 +155,7 @@ export interface CaptureItem {
   poster: Blob | null | undefined;
 }
 
-export interface CaptureQueueState {
+interface CaptureQueueState {
   items: CaptureItem[];
   /**
    * At most one row may be previewed: each viewer is a WebGL2 context, which is
@@ -169,7 +169,7 @@ export interface CaptureQueueState {
   autoPreview: boolean;
 }
 
-export type CaptureEvent =
+type CaptureEvent =
   | { type: "added"; items: CaptureItem[] }
   | { type: "removed"; id: string }
   | { type: "previewed"; id: string | null }
