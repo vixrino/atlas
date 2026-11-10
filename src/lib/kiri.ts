@@ -20,12 +20,3 @@ export const KIRI_STATUS = {
 } as const;
 
 export type KiriStatus = (typeof KIRI_STATUS)[keyof typeof KIRI_STATUS];
-
-export const KIRI_STATUS_LABEL: Record<KiriStatus, string> = {
-  [KIRI_STATUS.uploading]: "KIRI is still receiving the video",
-  [KIRI_STATUS.processing]: "Reconstructing the scene",
-  [KIRI_STATUS.failed]: "KIRI could not reconstruct this walkthrough",
-  [KIRI_STATUS.successful]: "Reconstruction finished",
-  [KIRI_STATUS.queuing]: "Queued at KIRI",
-  [KIRI_STATUS.expired]: "This job expired before its result was downloaded",
-};

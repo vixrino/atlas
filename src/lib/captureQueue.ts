@@ -100,15 +100,6 @@ export function removeJob(serialize: string) {
   write(byId);
 }
 
-export function clearJobs() {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // Nothing to recover from; the page is already moving on.
-  }
-  notify();
-}
-
 /**
  * Someone mid-reconstruction when they load a newer build has the only copy of
  * their task id under the old key — losing it is losing the capture, which is
