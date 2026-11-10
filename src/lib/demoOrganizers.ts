@@ -46,7 +46,7 @@ function usernameFromName(name: string) {
     .slice(0, 20);
 }
 
-export const DEMO_ORGANIZER_PROFILES: Profile[] = ORGANIZERS.map((org, i) => {
+const DEMO_ORGANIZER_PROFILES: Profile[] = ORGANIZERS.map((org, i) => {
   const username = usernameFromName(org.name);
   return {
     id: `demo-org-${i}`,
