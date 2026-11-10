@@ -59,19 +59,6 @@ export function loadGoogleMaps(): Promise<GoogleMapsLibs> {
   return libsPromise;
 }
 
-export function placesWithLocation<
-  T extends { location?: { lat: number; lng: number } },
->(places: T[]) {
-  return places.filter(
-    (p): p is T & { location: { lat: number; lng: number } } =>
-      Boolean(
-        p.location &&
-          Number.isFinite(p.location.lat) &&
-          Number.isFinite(p.location.lng),
-      ),
-  );
-}
-
 export type HeatPoint = {
   lat: number;
   lng: number;
