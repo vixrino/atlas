@@ -6,7 +6,6 @@ import {
   deleteField,
   doc,
   onSnapshot,
-  orderBy,
   query,
   serverTimestamp,
   setDoc,
@@ -44,35 +43,12 @@ export function canContributeToAlbum(
   return canEditAlbum(album, uid) || albumVisibility(album) === "public";
 }
 
-/** Owner, collaborator, pending invitee, or a public journey anyone may open. */
-export function canViewAlbum(album: Album, uid: string | undefined): boolean {
-  if (!uid) return false;
-  if (albumVisibility(album) === "public") return true;
-  if (album.ownerId === uid) return true;
-  if (albumMemberIds(album).includes(uid)) return true;
-  return Boolean(album.pendingMemberIds?.includes(uid));
-}
-
 function sortByCreatedDesc(albums: Album[]) {
   return [...albums].sort((a, b) => {
     const aTime = a.createdAt?.toMillis?.() ?? 0;
     const bTime = b.createdAt?.toMillis?.() ?? 0;
     return bTime - aTime;
   });
-}
-
-export function subscribeToAlbums(
-  onChange: (albums: Album[]) => void,
-  onError?: (error: Error) => void,
-) {
-  const q = query(collection(db, "albums"), orderBy("createdAt", "desc"));
-  return onSnapshot(
-    q,
-    (snap) => {
-      onChange(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Album));
-    },
-    onError,
-  );
 }
 
 export function subscribeToAlbumsByOwner(
