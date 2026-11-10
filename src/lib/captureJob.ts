@@ -1,9 +1,6 @@
 import type { CaptureStatus, WorldLabsCapture } from "./captureStatus";
 import type { CaptureBackend } from "./captureBackend";
 
-/** One definition of the job shape, declared next to the storage that owns it. */
-export type { CaptureJob } from "./captureQueue";
-
 /**
  * XHR rather than fetch: a walkthrough video is hundreds of megabytes and fetch
  * cannot report upload progress, so the whole send would look like a hang.
