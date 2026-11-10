@@ -4,9 +4,8 @@
  * Uploads a walkthrough, polls until generation completes, and downloads the
  * splat — the same three steps the app's /capture page would drive.
  *
- * Standing alongside scripts/kiri_3dgs.py rather than replacing it: the point
- * is to put a Marble world and a KIRI reconstruction of the same walkthrough
- * side by side before any of the app moves over.
+ * The point is to put a Marble world and a KIRI reconstruction of the same
+ * walkthrough side by side before any of the app moves over.
  *
  * Needs no dependencies — Node's own fetch. WORLDLABS_API_KEY is read from the
  * environment, falling back to .env.local.

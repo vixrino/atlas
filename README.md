@@ -188,10 +188,6 @@ splat lands the form is long gone and no `File` survives a reload. Steps 4–5
 need no Firebase; without it the splat still renders and can be downloaded, it
 just cannot be saved.
 
-`scripts/kiri_3dgs.py` drives the same three endpoints from the command line
-(`--video` to start, `--serialize` to resume). Paste the task id it prints into
-`/capture` to render that job's splat in the app.
-
 ## Where media lives
 
 Every byte is in **Firebase Storage**. Firestore holds download URLs and
