@@ -31,7 +31,7 @@ export type OperationStatus =
   | "IN_PROGRESS"
   | (string & {});
 
-export type WorldAssets = {
+type WorldAssets = {
   mesh: {
     /** Walkable collision geometry. Always present. */
     collider_mesh_url: string | null;

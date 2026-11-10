@@ -38,7 +38,7 @@ const TRIM = 0.02;
 /** Fewer usable samples than this and none of the percentiles mean anything. */
 const MIN_SAMPLES = 32;
 
-export interface Framing {
+interface Framing {
   /** Extent of the capture with floaters trimmed off. */
   box: THREE.Box3;
   /** Where the camera goes, and what it turns about: the middle of the place. */
@@ -55,7 +55,7 @@ function percentile(sorted: Float32Array, q: number) {
 }
 
 /** The same answer, in plain numbers, for a renderer that is not three.js. */
-export interface RawFraming {
+interface RawFraming {
   center: { x: number; y: number; z: number };
   radius: number;
   floorY: number;

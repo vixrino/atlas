@@ -18,7 +18,7 @@ import {
  * own underneath it. Nothing but the layout differs — every phase, field,
  * action and guard below is shared.
  */
-export type QueueLayout = "rows" | "tiles";
+type QueueLayout = "rows" | "tiles";
 
 interface CaptureQueueProps {
   items: CaptureItem[];

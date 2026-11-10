@@ -28,7 +28,7 @@ export interface SplatViewerProps {
  * and `transcodeSpz` is what turns it into the SPZ that gets stored. A capture
  * reconstructed by World Labs never reaches it.
  */
-export type SplatRenderer = "playcanvas" | "spark";
+type SplatRenderer = "playcanvas" | "spark";
 
 export const SPLAT_RENDERER: SplatRenderer =
   process.env.NEXT_PUBLIC_SPLAT_RENDERER === "spark" ? "spark" : "playcanvas";

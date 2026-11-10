@@ -119,13 +119,13 @@ const DEMO_STEP_MS = 220;
  * and the capture form, which is a place to begin work rather than watch it,
  * opens empty every time.
  */
-export type RunnerMode =
+type RunnerMode =
   /** A blank form. Nothing already running is adopted, so it never shows work. */
   | "new"
   /** Watches what this album has in flight, and has no picker of its own. */
   | "album";
 
-export interface CaptureRunnerProps {
+interface CaptureRunnerProps {
   /** Null for Recents, whose captures are the ones filed under no album. */
   albumId: string | null;
   mode: RunnerMode;

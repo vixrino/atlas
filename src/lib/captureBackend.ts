@@ -21,7 +21,7 @@ export function isCaptureBackend(value: unknown): value is CaptureBackend {
   return value === "worldlabs" || value === "kiri";
 }
 
-export interface BackendProfile {
+interface BackendProfile {
   id: CaptureBackend;
   label: string;
   /** One line, for the control that picks between them. */

@@ -14,7 +14,7 @@ import { getProfile } from "@/lib/profiles";
 import { setupHref, sitePath } from "@/lib/returnTo";
 import AtlasLogo from "@/components/AtlasLogo";
 
-export type AuthMode = "signin" | "signup";
+type AuthMode = "signin" | "signup";
 
 const COPY = {
   signin: {
