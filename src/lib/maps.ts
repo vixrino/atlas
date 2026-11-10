@@ -18,7 +18,7 @@ export type GoogleMapsLibs = {
   SymbolPath: typeof google.maps.SymbolPath;
 };
 
-export function getGoogleMapsApiKey() {
+function getGoogleMapsApiKey() {
   return process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ?? "";
 }
 

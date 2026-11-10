@@ -23,7 +23,7 @@ import type { CaptureBackend } from "./captureBackend";
  * but a bad key or a dead task id looks identical to a blip from here, so the
  * row speaks up once the failures stop looking transient.
  */
-export const FAILURES_BEFORE_REPORTING = 3;
+const FAILURES_BEFORE_REPORTING = 3;
 
 /**
  * A row's whole life. `checking` covers both of the questions an item can open

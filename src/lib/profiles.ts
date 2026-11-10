@@ -21,7 +21,7 @@ import type { Profile } from "./types";
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
-export function normalizeUsername(raw: string) {
+function normalizeUsername(raw: string) {
   return raw.trim().toLowerCase();
 }
 
@@ -81,7 +81,7 @@ export async function getProfileByUsername(
   return first ? ({ id: first.id, ...first.data() } as Profile) : null;
 }
 
-export const PROFILE_SEARCH_LIMIT = 20;
+const PROFILE_SEARCH_LIMIT = 20;
 
 /**
  * Handle search, matched by prefix.

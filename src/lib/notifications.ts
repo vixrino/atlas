@@ -38,7 +38,7 @@ function seenKey(uid: string) {
   return `atlas:notifications-seen:${uid}`;
 }
 
-export function readSeenAt(uid: string): number {
+function readSeenAt(uid: string): number {
   if (typeof window === "undefined") return 0;
   return Number(window.localStorage.getItem(seenKey(uid)) ?? 0);
 }

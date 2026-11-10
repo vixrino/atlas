@@ -20,7 +20,7 @@ import type { Place } from "./types";
 import type { WorldLabsCapture } from "./captureStatus";
 
 /** Prefer when it was filmed; fall back to when it was saved. */
-export function placeTakenMs(place: Place): number {
+function placeTakenMs(place: Place): number {
   if (place.capturedAt) {
     const filmed = Date.parse(place.capturedAt);
     if (Number.isFinite(filmed)) return filmed;
