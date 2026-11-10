@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   // splat twice, which is expensive for multi-MB captures.
   reactStrictMode: false,
 
+  // Don't let `next dev` regenerate AGENTS.md / CLAUDE.md at the repo root.
+  agentRules: false,
+
   images: {
     /**
      * Everything the app shows is a 640px JPEG in a bucket, drawn into tiles a
