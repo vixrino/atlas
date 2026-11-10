@@ -124,14 +124,6 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-/** Credits left on the key, for the estimate shown before a capture is sent. */
-export async function remainingCredits(): Promise<number> {
-  const body = await call<{ remaining_credits: number }>("/credits", {
-    method: "GET",
-  });
-  return body.remaining_credits;
-}
-
 /**
  * Hands the walkthrough to World Labs and returns the operation to poll.
  *
